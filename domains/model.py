@@ -36,7 +36,7 @@ class Week:
         self.name: str = name
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Task:
     story_ref: str
     name: str
@@ -53,12 +53,24 @@ class Story:
         self.tasks: List[Task] = tasks
 
 
-class Date:
+class Day:
 
-    def __init__(self, ref: str, ts: date, available_points: int):
+    def __init__(self, ref: str, ts: date, allocated_points: int):
         self.ref: str = ref
         self.ts: date = ts
-        self.available_points: int = available_points
+        self.allocated_points: int = allocated_points
+        self._allocations = set()
 
-    def allocate(self):
-        pass
+    @property
+    def available_points(self):
+        return self.allocated_points - self.allocation_points
+
+    @property
+    def allocation_points(self):
+        return sum([task.required_point for task in self._allocations])
+
+    def allocate(self, task: Task):
+        if task.required_point > self.allocated_points:
+            raise Exception("Can't allocate task")
+        if task not in self._allocations:
+            self._allocations.add(task)
